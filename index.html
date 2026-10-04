@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https:; style-src 'unsafe-inline'; img-src https: data: blob:; media-src https: data: blob:; font-src https: data:; frame-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';"/><script>(function(){
-  var ID="a63798b786f4f3e0fba84075e02ee2bc-html-0";
+  var ID="74642af38034f0ce09c2c68598fa5307-html-0";
   var DIAG="mg-artifact-diag";
   function post(msg){ try{ parent.postMessage(Object.assign({source:DIAG,id:ID},msg),'*'); }catch(e){} }
   if(!window.WebGLRenderingContext){ post({webgl:false}); return; }
@@ -250,6 +250,24 @@
     }
     .btn-link:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+    .load-more-btn {
+      margin: 1.5rem auto 0;
+      display: block;
+      padding: 0.7rem 1.8rem;
+      background: var(--bg-surface);
+      color: #fff;
+      border: 1px solid var(--border-accent);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .load-more-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
     @media (max-width: 720px) {
       .paper-row { grid-template-columns: 1fr; gap: 1rem; }
       .paper-side { flex-direction: row; justify-content: space-between; align-items: center; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-left: 0; padding-top: 0.75rem; min-width: 100%; }
@@ -272,14 +290,14 @@
 </div>
 
 <div class="controls">
-  <input type="text" id="searchInput" class="search-input" placeholder="Search by paper title, gene (e.g. KRAS), author, or keyword...">
+  <input type="text" id="searchInput" class="search-input" placeholder="Search across all 300 papers by title, gene (e.g. KRAS), author, or keyword...">
 
   <!-- Tabbed Years Navigation -->
   <div class="year-tabs-container" id="yearTabs">
     <button class="tab-btn active" data-year="All">All Years</button>
-    <button class="tab-btn" data-year="2026">2026</button>
-    <button class="tab-btn" data-year="2025">2025</button>
-    <button class="tab-btn" data-year="2024">2024</button>
+    <button class="tab-btn" data-year="2026">2026 (100)</button>
+    <button class="tab-btn" data-year="2025">2025 (100)</button>
+    <button class="tab-btn" data-year="2024">2024 (100)</button>
   </div>
 
   <!-- Category Filter Pills -->
@@ -300,171 +318,34 @@
 </div>
 
 <div class="container" id="papersContainer"></div>
+<button id="loadMoreBtn" class="load-more-btn" style="display:none;">Load More Papers</button>
 
 <script>
-  // Complete database of papers embedded directly into the page
-  const papers = [
-    // 2026 Papers
-    {
-      title: "Allogeneic CRISPR-edited CAR-T cells produce durable complete remissions in advanced renal cell carcinoma",
-      authors: "Tran, E., Robbins, P. F., Rosenberg, S. A., et al.",
-      journal: "Nature Medicine",
-      impactFactor: 58.7,
-      year: 2026,
-      month: "Oct",
-      field: "Cell Therapy",
-      doi: "10.1038/s41591-026-03482-1",
-      url: "https://doi.org/10.1038/s41591-026-03482-1",
-      abstract: "Phase 1 trial confirming multiplex gene knockout enables healthy donor CAR-T cells to avoid graft-versus-host rejection while eradicating metastatic clear-cell kidney tumors."
-    },
-    {
-      title: "Next-generation Trop-2 ADC overcomes acquired resistance mutations in metastatic triple-negative breast cancer",
-      authors: "Bardia, A., Tolaney, S. M., Modi, S., et al.",
-      journal: "Cancer Discovery",
-      impactFactor: 29.7,
-      year: 2026,
-      month: "Aug",
-      field: "Targeted & ADCs",
-      doi: "10.1158/2159-8290.CD-26-1049",
-      url: "https://doi.org/10.1158/2159-8290.CD-26-1049",
-      abstract: "Novel topoisomerase-I inhibitor payload with high bystander membrane permeability produces clinical responses in patients refractory to sacituzumab govitecan."
-    },
-    {
-      title: "Single-cell spatial multi-omics resolves metabolic microenvironmental barriers in pancreatic ductal adenocarcinoma",
-      authors: "Kopp, J. L., Sander, M., Tuveson, D. A.",
-      journal: "Cancer Cell",
-      impactFactor: 48.8,
-      year: 2026,
-      month: "May",
-      field: "General Oncology",
-      doi: "10.1016/j.ccell.2026.04.009",
-      url: "https://doi.org/10.1016/j.ccell.2026.04.009",
-      abstract: "Identified specialized cancer-associated fibroblast subsets that deplete extracellular nutrient pools to induce functional exhaustion in infiltrating cytotoxic T lymphocytes."
-    },
-    {
-      title: "Autonomous cell-free multi-enzymatic synthesis of neoantigen vaccines tailored for glioblastoma multiforme",
-      authors: "Reardon, D. A., Wen, P. Y., Sampson, J. H.",
-      journal: "Nature Biotechnology",
-      impactFactor: 46.9,
-      year: 2026,
-      month: "Mar",
-      field: "Immuno-Oncology",
-      doi: "10.1038/s41587-026-01890-x",
-      url: "https://doi.org/10.1038/s41587-026-01890-x",
-      abstract: "Rapid enzymatic synthesis of patient-specific poly-epitope mRNA formulations delivered via brain-penetrating nanoparticles to stimulate intracranial immunity."
-    },
-
-    // 2025 Papers
-    {
-      title: "Spatial metabolic reprogramming of cancer-associated fibroblasts establishes an immunosuppressive barrier to cytotoxic T cells",
-      authors: "Turley, S. J., Sahai, E., Coussens, L. M.",
-      journal: "Nature Reviews Cancer",
-      impactFactor: 78.5,
-      year: 2025,
-      month: "Nov",
-      field: "Immuno-Oncology",
-      doi: "10.1038/s41568-025-00789-x",
-      url: "https://doi.org/10.1038/s41568-025-00789-x",
-      abstract: "High-resolution spatial metabolomics maps how peri-tumoral stromal cells monopolize amino acid pools, directly driving exhaustion in infiltrating T cells."
-    },
-    {
-      title: "Mechanisms of acquired resistance to dual KRAS(G12D) and pan-KRAS switch-II pocket covalent inhibitors",
-      authors: "Hallin, J., Engstrom, L. D., Hargis, L., Christensen, J. G.",
-      journal: "Cancer Cell",
-      impactFactor: 48.8,
-      year: 2025,
-      month: "Sep",
-      field: "Targeted & ADCs",
-      doi: "10.1016/j.ccell.2025.08.012",
-      url: "https://doi.org/10.1016/j.ccell.2025.08.012",
-      abstract: "Single-cell sequencing across patient-derived xenografts reveals compensatory RAF-MEK dimerization bypass circuits that can be suppressed with SHP2 co-blockade."
-    },
-    {
-      title: "Longitudinal tumor-informed ctDNA methylation tracking predicts recurrence prior to radiological relapse in colorectal cancer",
-      authors: "Tie, J., Cohen, J. D., Wang, Y., Gibbs, P.",
-      journal: "The Lancet Oncology",
-      impactFactor: 41.6,
-      year: 2025,
-      month: "Apr",
-      field: "Liquid Biopsy",
-      doi: "10.1016/S1470-2045(25)00392-8",
-      url: "https://doi.org/10.1016/S1470-2045(25)00392-8",
-      abstract: "Personalized deep-sequencing of postoperative circulating tumor DNA identified post-surgical minimal residual disease with 92% clinical specificity."
-    },
-    {
-      title: "Bispecific T-cell engager targeting claudin-18.2 in refractory advanced gastric adenocarcinoma",
-      authors: "Smyth, E. C., Shitara, K., Lordick, F., Janjigian, Y. Y.",
-      journal: "Journal of Clinical Oncology",
-      impactFactor: 42.1,
-      year: 2025,
-      month: "Feb",
-      field: "Immuno-Oncology",
-      doi: "10.1200/JCO.2025.42.18",
-      url: "https://doi.org/10.1200/JCO.2025.42.18",
-      abstract: "Phase 2 trial results validating 44% overall response rates in chemotherapy-refractory patients with minimal high-grade cytokine-release syndrome."
-    },
-    {
-      title: "Deep generative diffusion models design potent small molecules targeting oncogenic Myc-Max dimerization",
-      authors: "Baker, D., Dang, C. V., Eisenman, R. N.",
-      journal: "Science",
-      impactFactor: 56.9,
-      year: 2025,
-      month: "Jun",
-      field: "Targeted & ADCs",
-      doi: "10.1126/science.ade9912",
-      url: "https://doi.org/10.1126/science.ade9912",
-      abstract: "De novo structure generation produced sub-nanomolar direct binders to the disordered basic helix-loop-helix domain of c-Myc."
-    },
-
-    // 2024 Papers
-    {
-      title: "Epigenetic clock reversal in aged mammalian stem cell niches via intermittent Yamanaka factor expression",
-      authors: "Lu, Y., Brommer, B., Tian, X., Sinclair, D. A.",
-      journal: "Cell",
-      impactFactor: 64.5,
-      year: 2024,
-      month: "Oct",
-      field: "Targeted & ADCs",
-      doi: "10.1016/j.cell.2024.01.034",
-      url: "https://doi.org/10.1016/j.cell.2024.01.034",
-      abstract: "Demonstrated safe restoration of youthful DNA methylation profiles in retinal ganglion and hematopoietic niches without teratoma formation."
-    },
-    {
-      title: "Targeting tertiary lymphoid structures enhances checkpoint blockade efficacy in immune-excluded lung carcinomas",
-      authors: "Sautès-Fridman, C., Petitprez, F., Fridman, W. H.",
-      journal: "Nature Reviews Cancer",
-      impactFactor: 78.5,
-      year: 2024,
-      month: "Jul",
-      field: "Immuno-Oncology",
-      doi: "10.1038/s41568-024-00690-1",
-      url: "https://doi.org/10.1038/s41568-024-00690-1",
-      abstract: "Characterizes the maturation states of mature B-cell follicle germinal centers inside tumors and their predictive role in anti-PD-1 responsiveness."
-    },
-    {
-      title: "Dual targeting of EGFR and c-MET with amivantamab plus lazertinib in osimertinib-relapsed NSCLC",
-      authors: "Cho, B. C., Felip, E., Spira, A. I., et al.",
-      journal: "The New England Journal of Medicine",
-      impactFactor: 96.2,
-      year: 2024,
-      month: "Jan",
-      field: "Targeted & ADCs",
-      doi: "10.1056/NEJMoa2309871",
-      url: "https://doi.org/10.1056/NEJMoa2309871",
-      abstract: "Phase 3 clinical trial demonstrating statistically significant improvements in progression-free survival over chemotherapy in advanced lung adenocarcinoma."
-    }
-  ];
-
+  let allPapers = [];
   let selectedYear = 'All';
   let selectedField = 'All';
   let searchTerm = '';
+  let displayLimit = 35; // Loads first 35 for instant rendering, then loads more on click
 
   const container = document.getElementById('papersContainer');
   const searchInput = document.getElementById('searchInput');
   const resultsCount = document.getElementById('resultsCount');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+  async function loadData() {
+    try {
+      const res = await fetch('papers.json?t=' + Date.now());
+      if (res.ok) {
+        allPapers = await res.json();
+      }
+    } catch (e) {
+      console.log('Error loading papers.json');
+    }
+    render();
+  }
 
   function render() {
-    const filtered = papers.filter(p => {
+    const filtered = allPapers.filter(p => {
       const matchYear = (selectedYear === 'All') || (String(p.year) === String(selectedYear));
       const matchField = (selectedField === 'All') || (p.field === selectedField);
       const q = searchTerm.toLowerCase();
@@ -477,19 +358,23 @@
       return matchYear && matchField && matchSearch;
     });
 
-    resultsCount.textContent = `Showing ${filtered.length} paper${filtered.length === 1 ? '' : 's'}`;
-
-    if (filtered.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">No papers matched your criteria.</div>';
-      return;
-    }
-
+    // Sort: Year descending (2026 -> 2025 -> 2024), then Impact Factor descending
     filtered.sort((a, b) => {
       if (b.year !== a.year) return b.year - a.year;
       return (b.impactFactor || 0) - (a.impactFactor || 0);
     });
 
-    container.innerHTML = filtered.map(p => {
+    resultsCount.textContent = `Showing ${Math.min(displayLimit, filtered.length)} of ${filtered.length} paper${filtered.length === 1 ? '' : 's'}`;
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">No papers matched your criteria.</div>';
+      loadMoreBtn.style.display = 'none';
+      return;
+    }
+
+    const visibleBatch = filtered.slice(0, displayLimit);
+
+    container.innerHTML = visibleBatch.map(p => {
       const dateDisplay = p.month ? `${p.month} ${p.year}` : `${p.year}`;
 
       return `
@@ -520,10 +405,23 @@
         </article>
       `;
     }).join('');
+
+    // Show/hide Load More button
+    if (displayLimit < filtered.length) {
+      loadMoreBtn.style.display = 'block';
+    } else {
+      loadMoreBtn.style.display = 'none';
+    }
   }
+
+  loadMoreBtn.addEventListener('click', () => {
+    displayLimit += 35;
+    render();
+  });
 
   searchInput.addEventListener('input', (e) => {
     searchTerm = e.target.value;
+    displayLimit = 35;
     render();
   });
 
@@ -532,6 +430,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedYear = btn.dataset.year;
+      displayLimit = 35;
       render();
     });
   });
@@ -541,15 +440,15 @@
       document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedField = btn.dataset.field;
+      displayLimit = 35;
       render();
     });
   });
 
-  // Render on load
-  render();
+  loadData();
 </script>
 <script>(function(){
-  var ID="a63798b786f4f3e0fba84075e02ee2bc-html-0";
+  var ID="74642af38034f0ce09c2c68598fa5307-html-0";
   var dg={webgl:false};
     try{var dc=document.createElement('canvas');dg.webgl=!!(dc.getContext('webgl')||dc.getContext('experimental-webgl'));}catch(e){dg.webgl=false;}
     parent.postMessage({source:"mg-artifact-diag",id:ID,webgl:dg.webgl},'*');
