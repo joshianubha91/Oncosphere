@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https:; style-src 'unsafe-inline'; img-src https: data: blob:; media-src https: data: blob:; font-src https: data:; frame-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';"/><script>(function(){
-  var ID="74642af38034f0ce09c2c68598fa5307-html-0";
+  var ID="0f4df259dffc504244b67d672eed367c-html-0";
   var DIAG="mg-artifact-diag";
   function post(msg){ try{ parent.postMessage(Object.assign({source:DIAG,id:ID},msg),'*'); }catch(e){} }
   if(!window.WebGLRenderingContext){ post({webgl:false}); return; }
@@ -253,7 +253,7 @@
     .load-more-btn {
       margin: 1.5rem auto 0;
       display: block;
-      padding: 0.7rem 1.8rem;
+      padding: 0.75rem 2rem;
       background: var(--bg-surface);
       color: #fff;
       border: 1px solid var(--border-accent);
@@ -268,6 +268,13 @@
       border-color: var(--accent);
     }
 
+    .loading-spinner {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-med);
+      font-size: 1.1rem;
+    }
+
     @media (max-width: 720px) {
       .paper-row { grid-template-columns: 1fr; gap: 1rem; }
       .paper-side { flex-direction: row; justify-content: space-between; align-items: center; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-left: 0; padding-top: 0.75rem; min-width: 100%; }
@@ -279,7 +286,7 @@
 
 <header>
   <div class="nav-inner">
-    <a href="#" class="logo">🔬 OncoSphere</a>
+    <a href="./" class="logo">🔬 OncoSphere</a>
     <div class="badge-if">Impact Factor ≥ 15.0</div>
   </div>
 </header>
@@ -294,30 +301,32 @@
 
   <!-- Tabbed Years Navigation -->
   <div class="year-tabs-container" id="yearTabs">
-    <button class="tab-btn active" data-year="All">All Years</button>
-    <button class="tab-btn" data-year="2026">2026 (100)</button>
-    <button class="tab-btn" data-year="2025">2025 (100)</button>
-    <button class="tab-btn" data-year="2024">2024 (100)</button>
+    <button type="button" class="tab-btn active" data-year="All">All Years</button>
+    <button type="button" class="tab-btn" data-year="2026">2026 (100)</button>
+    <button type="button" class="tab-btn" data-year="2025">2025 (100)</button>
+    <button type="button" class="tab-btn" data-year="2024">2024 (100)</button>
   </div>
 
   <!-- Category Filter Pills -->
   <div class="filter-bar">
     <span class="filter-label">Topic:</span>
-    <button class="pill active" data-field="All">All</button>
-    <button class="pill" data-field="Targeted & ADCs">Targeted & ADCs</button>
-    <button class="pill" data-field="Cell Therapy">Cell Therapy</button>
-    <button class="pill" data-field="Immuno-Oncology">Immuno-Oncology</button>
-    <button class="pill" data-field="Liquid Biopsy">Liquid Biopsy</button>
-    <button class="pill" data-field="General Oncology">General Oncology</button>
+    <button type="button" class="pill active" data-field="All">All</button>
+    <button type="button" class="pill" data-field="Targeted & ADCs">Targeted & ADCs</button>
+    <button type="button" class="pill" data-field="Cell Therapy">Cell Therapy</button>
+    <button type="button" class="pill" data-field="Immuno-Oncology">Immuno-Oncology</button>
+    <button type="button" class="pill" data-field="Liquid Biopsy">Liquid Biopsy</button>
+    <button type="button" class="pill" data-field="General Oncology">General Oncology</button>
   </div>
 </div>
 
 <div class="stats-bar">
-  <span id="resultsCount">Loading papers...</span>
+  <span id="resultsCount">Loading 300 oncology papers...</span>
   <span>Click "Read Paper" to resolve primary DOI</span>
 </div>
 
-<div class="container" id="papersContainer"></div>
+<div class="container" id="papersContainer">
+  <div class="loading-spinner">⌛ Loading research papers...</div>
+</div>
 <button id="loadMoreBtn" class="load-more-btn" style="display:none;">Load More Papers</button>
 
 <script>
@@ -325,7 +334,7 @@
   let selectedYear = 'All';
   let selectedField = 'All';
   let searchTerm = '';
-  let displayLimit = 35; // Loads first 35 for instant rendering, then loads more on click
+  let displayLimit = 30;
 
   const container = document.getElementById('papersContainer');
   const searchInput = document.getElementById('searchInput');
@@ -334,31 +343,41 @@
 
   async function loadData() {
     try {
-      const res = await fetch('papers.json?t=' + Date.now());
+      // Direct relative fetch with cache-busting timestamp
+      const res = await fetch('papers.json?v=' + Date.now());
       if (res.ok) {
         allPapers = await res.json();
+      } else {
+        container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">Could not load papers.json. Refreshing in a moment...</div>';
+        return;
       }
     } catch (e) {
-      console.log('Error loading papers.json');
+      container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">Network error loading papers. Please refresh.</div>';
+      return;
     }
     render();
   }
 
   function render() {
+    if (!allPapers || allPapers.length === 0) {
+      return;
+    }
+
     const filtered = allPapers.filter(p => {
       const matchYear = (selectedYear === 'All') || (String(p.year) === String(selectedYear));
       const matchField = (selectedField === 'All') || (p.field === selectedField);
       const q = searchTerm.toLowerCase();
       const matchSearch = 
-        p.title.toLowerCase().includes(q) ||
-        p.authors.toLowerCase().includes(q) ||
-        p.journal.toLowerCase().includes(q) ||
+        !q ||
+        (p.title && p.title.toLowerCase().includes(q)) ||
+        (p.authors && p.authors.toLowerCase().includes(q)) ||
+        (p.journal && p.journal.toLowerCase().includes(q)) ||
         (p.abstract && p.abstract.toLowerCase().includes(q));
 
       return matchYear && matchField && matchSearch;
     });
 
-    // Sort: Year descending (2026 -> 2025 -> 2024), then Impact Factor descending
+    // Primary sort: Year descending, Secondary: Impact Factor descending
     filtered.sort((a, b) => {
       if (b.year !== a.year) return b.year - a.year;
       return (b.impactFactor || 0) - (a.impactFactor || 0);
@@ -406,7 +425,6 @@
       `;
     }).join('');
 
-    // Show/hide Load More button
     if (displayLimit < filtered.length) {
       loadMoreBtn.style.display = 'block';
     } else {
@@ -415,40 +433,43 @@
   }
 
   loadMoreBtn.addEventListener('click', () => {
-    displayLimit += 35;
+    displayLimit += 30;
     render();
   });
 
   searchInput.addEventListener('input', (e) => {
     searchTerm = e.target.value;
-    displayLimit = 35;
+    displayLimit = 30;
     render();
   });
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedYear = btn.dataset.year;
-      displayLimit = 35;
+      displayLimit = 30;
       render();
     });
   });
 
   document.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
       document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedField = btn.dataset.field;
-      displayLimit = 35;
+      displayLimit = 30;
       render();
     });
   });
 
+  // Start data load
   loadData();
 </script>
 <script>(function(){
-  var ID="74642af38034f0ce09c2c68598fa5307-html-0";
+  var ID="0f4df259dffc504244b67d672eed367c-html-0";
   var dg={webgl:false};
     try{var dc=document.createElement('canvas');dg.webgl=!!(dc.getContext('webgl')||dc.getContext('experimental-webgl'));}catch(e){dg.webgl=false;}
     parent.postMessage({source:"mg-artifact-diag",id:ID,webgl:dg.webgl},'*');
