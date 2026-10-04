@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https:; style-src 'unsafe-inline'; img-src https: data: blob:; media-src https: data: blob:; font-src https: data:; frame-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';"/><script>(function(){
-  var ID="0f4df259dffc504244b67d672eed367c-html-0";
+  var ID="7b653906a8153994234488f9c4d99434-html-0";
   var DIAG="mg-artifact-diag";
   function post(msg){ try{ parent.postMessage(Object.assign({source:DIAG,id:ID},msg),'*'); }catch(e){} }
   if(!window.WebGLRenderingContext){ post({webgl:false}); return; }
@@ -112,7 +112,6 @@
     }
     .search-input:focus { border-color: var(--accent); }
 
-    /* Year Tabs */
     .year-tabs-container {
       display: flex;
       align-items: center;
@@ -139,7 +138,6 @@
       color: #fff;
     }
 
-    /* Topic Filter Pills */
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
@@ -171,7 +169,6 @@
       color: var(--text-low);
     }
 
-    /* Paper List Container */
     .container {
       max-width: 1100px;
       margin: 0 auto;
@@ -268,13 +265,6 @@
       border-color: var(--accent);
     }
 
-    .loading-spinner {
-      text-align: center;
-      padding: 4rem 1rem;
-      color: var(--text-med);
-      font-size: 1.1rem;
-    }
-
     @media (max-width: 720px) {
       .paper-row { grid-template-columns: 1fr; gap: 1rem; }
       .paper-side { flex-direction: row; justify-content: space-between; align-items: center; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-left: 0; padding-top: 0.75rem; min-width: 100%; }
@@ -299,7 +289,6 @@
 <div class="controls">
   <input type="text" id="searchInput" class="search-input" placeholder="Search across all 300 papers by title, gene (e.g. KRAS), author, or keyword...">
 
-  <!-- Tabbed Years Navigation -->
   <div class="year-tabs-container" id="yearTabs">
     <button type="button" class="tab-btn active" data-year="All">All Years</button>
     <button type="button" class="tab-btn" data-year="2026">2026 (100)</button>
@@ -307,7 +296,6 @@
     <button type="button" class="tab-btn" data-year="2024">2024 (100)</button>
   </div>
 
-  <!-- Category Filter Pills -->
   <div class="filter-bar">
     <span class="filter-label">Topic:</span>
     <button type="button" class="pill active" data-field="All">All</button>
@@ -320,12 +308,12 @@
 </div>
 
 <div class="stats-bar">
-  <span id="resultsCount">Loading 300 oncology papers...</span>
+  <span id="resultsCount">Loading 300 papers...</span>
   <span>Click "Read Paper" to resolve primary DOI</span>
 </div>
 
 <div class="container" id="papersContainer">
-  <div class="loading-spinner">⌛ Loading research papers...</div>
+  <div style="text-align:center; padding:3rem; color:var(--text-low);">Loading papers from repository...</div>
 </div>
 <button id="loadMoreBtn" class="load-more-btn" style="display:none;">Load More Papers</button>
 
@@ -343,32 +331,23 @@
 
   async function loadData() {
     try {
-      // Direct relative fetch with cache-busting timestamp
-      const res = await fetch('papers.json?v=' + Date.now());
-      if (res.ok) {
-        allPapers = await res.json();
-      } else {
-        container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">Could not load papers.json. Refreshing in a moment...</div>';
-        return;
-      }
-    } catch (e) {
-      container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">Network error loading papers. Please refresh.</div>';
-      return;
+      const res = await fetch('papers.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      allPapers = await res.json();
+      render();
+    } catch (err) {
+      container.innerHTML = '<div style="text-align:center; padding:3rem; color:var(--text-low);">Error loading papers.json (' + err.message + '). Please hard refresh (Cmd+Shift+R or Ctrl+F5).</div>';
     }
-    render();
   }
 
   function render() {
-    if (!allPapers || allPapers.length === 0) {
-      return;
-    }
+    if (!allPapers || allPapers.length === 0) return;
 
     const filtered = allPapers.filter(p => {
       const matchYear = (selectedYear === 'All') || (String(p.year) === String(selectedYear));
       const matchField = (selectedField === 'All') || (p.field === selectedField);
-      const q = searchTerm.toLowerCase();
-      const matchSearch = 
-        !q ||
+      const q = searchTerm.toLowerCase().trim();
+      const matchSearch = !q ||
         (p.title && p.title.toLowerCase().includes(q)) ||
         (p.authors && p.authors.toLowerCase().includes(q)) ||
         (p.journal && p.journal.toLowerCase().includes(q)) ||
@@ -377,7 +356,6 @@
       return matchYear && matchField && matchSearch;
     });
 
-    // Primary sort: Year descending, Secondary: Impact Factor descending
     filtered.sort((a, b) => {
       if (b.year !== a.year) return b.year - a.year;
       return (b.impactFactor || 0) - (a.impactFactor || 0);
@@ -425,11 +403,7 @@
       `;
     }).join('');
 
-    if (displayLimit < filtered.length) {
-      loadMoreBtn.style.display = 'block';
-    } else {
-      loadMoreBtn.style.display = 'none';
-    }
+    loadMoreBtn.style.display = (displayLimit < filtered.length) ? 'block' : 'none';
   }
 
   loadMoreBtn.addEventListener('click', () => {
@@ -444,8 +418,7 @@
   });
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
+    btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedYear = btn.dataset.year;
@@ -455,8 +428,7 @@
   });
 
   document.querySelectorAll('.pill').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
+    btn.addEventListener('click', () => {
       document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedField = btn.dataset.field;
@@ -465,11 +437,10 @@
     });
   });
 
-  // Start data load
   loadData();
 </script>
 <script>(function(){
-  var ID="0f4df259dffc504244b67d672eed367c-html-0";
+  var ID="7b653906a8153994234488f9c4d99434-html-0";
   var dg={webgl:false};
     try{var dc=document.createElement('canvas');dg.webgl=!!(dc.getContext('webgl')||dc.getContext('experimental-webgl'));}catch(e){dg.webgl=false;}
     parent.postMessage({source:"mg-artifact-diag",id:ID,webgl:dg.webgl},'*');
