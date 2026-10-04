@@ -1,0 +1,32 @@
+name: Scheduled Oncology Papers Update
+
+on:
+  schedule:
+    # Runs automatically every Monday at 00:00 UTC (Weekly)
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Enables the manual "Run workflow" button
+
+permissions:
+  contents: write
+
+jobs:
+  update-papers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch Latest 300 Papers
+        run: python fetch_papers.py
+
+      - name: Commit and Push New papers.json
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add papers.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: automated literature update [skip ci]" && git push)
