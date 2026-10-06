@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https:; style-src 'unsafe-inline'; img-src https: data: blob:; media-src https: data: blob:; font-src https: data:; frame-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';"/><script>(function(){
+  var ID="9ad8c77b7b7332c4cafd548c73e365a2-html-0";
+  var DIAG="mg-artifact-diag";
+  function post(msg){ try{ parent.postMessage(Object.assign({source:DIAG,id:ID},msg),'*'); }catch(e){} }
+  if(!window.WebGLRenderingContext){ post({webgl:false}); return; }
+  function report(kind, log){
+    post({webgl:true, error: kind + ': ' + String(log||'unknown error').slice(0,300)});
+  }
+  var p = WebGLRenderingContext.prototype;
+  var gsp = p.getShaderParameter;
+  p.getShaderParameter = function(shader, pname){
+    var ok = gsp.apply(this, arguments);
+    if(!ok){ report('shader compile failed', this.getShaderInfoLog(shader)); }
+    return ok;
+  };
+  var glp = p.getProgramParameter;
+  p.getProgramParameter = function(program, pname){
+    var ok = glp.apply(this, arguments);
+    if(!ok){ report('shader program link failed', this.getProgramInfoLog(program)); }
+    return ok;
+  };
+  if(window.WebGL2RenderingContext){
+    var p2 = WebGL2RenderingContext.prototype;
+    var gsp2 = p2.getShaderParameter;
+    p2.getShaderParameter = function(shader, pname){
+      var ok = gsp2.apply(this, arguments);
+      if(!ok){ report('shader compile failed', this.getShaderInfoLog(shader)); }
+      return ok;
+    };
+    var glp2 = p2.getProgramParameter;
+    p2.getProgramParameter = function(program, pname){
+      var ok = glp2.apply(this, arguments);
+      if(!ok){ report('shader program link failed', this.getProgramInfoLog(program)); }
+      return ok;
+    };
+  }
+})();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OncoSphere v2 — Connected Oncology Research</title>
+<link rel="stylesheet" href="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.css">
+<style>
+:root{--bg-base:#080c16;--bg-surface:#0f1629;--bg-hover:#151f38;--border:#1c2742;--accent:#8b5cf6;--accent-light:#a78bfa;--gold:#f59e0b;--cyan:#06b6d4;--text-high:#f8fafc;--text-med:#94a3b8;--text-low:#64748b}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg-base);color:var(--text-high);line-height:1.5;padding-bottom:5rem}
+header{border-bottom:1px solid var(--border);background:rgba(8,12,22,.95);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50}
+.nav-inner{max-width:1200px;margin:0 auto;padding:.85rem 1.25rem;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.15rem;font-weight:800;color:#fff;text-decoration:none}
+.badge{font-size:.7rem;padding:.2rem .6rem;border-radius:999px;font-weight:600}
+.badge-ai{background:rgba(139,92,246,.15);color:var(--accent-light);border:1px solid rgba(139,92,246,.3)}
+.badge-trial{background:rgba(6,182,212,.15);color:var(--cyan);border:1px solid rgba(6,182,212,.3)}
+.hero{max-width:1200px;margin:0 auto;padding:2rem 1.25rem 1rem}
+.hero h1{font-size:2.2rem;font-weight:800;margin-bottom:.4rem;background:linear-gradient(135deg,#fff 40%,#c4b5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--text-med)}
+.controls{max-width:1200px;margin:.75rem auto 1rem;padding:0 1.25rem;display:flex;flex-direction:column;gap:.75rem}
+.search-input{width:100%;padding:.8rem 1rem;background:var(--bg-surface);border:1px solid var(--border);border-radius:10px;color:#fff;font-size:.95rem;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.year-tabs{display:flex;gap:.5rem;border-bottom:1px solid var(--border);padding-bottom:.6rem;flex-wrap:wrap}
+.tab-btn{background:transparent;border:1px solid transparent;color:var(--text-med);padding:.4rem 1rem;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer}
+.tab-btn:hover{color:#fff;background:var(--bg-hover)}
+.tab-btn.active{background:var(--accent);color:#fff}
+.slider-wrap{display:flex;align-items:center;gap:1rem;font-size:.85rem;color:var(--text-med)}
+.slider-wrap input[type=range]{flex:1;accent-color:var(--accent)}
+.target-bar{display:flex;flex-wrap:wrap;gap:.4rem}
+.target-bar .lbl{color:var(--text-low);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;align-self:center;margin-right:.25rem}
+.tgt{background:#0b1120;border:1px solid var(--border);color:var(--text-med);padding:.25rem .65rem;border-radius:999px;font-size:.78rem;cursor:pointer;transition:all .12s}
+.tgt:hover{border-color:#3b82f6;color:#fff}
+.tgt.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.stats{max-width:1200px;margin:0 auto 1rem;padding:0 1.25rem;display:flex;justify-content:space-between;font-size:.82rem;color:var(--text-low)}
+.container{max-width:1200px;margin:0 auto;padding:0 1.25rem;display:flex;flex-direction:column;gap:.9rem}
+.paper-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s,transform .15s}
+.paper-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.paper-body{padding:1.15rem 1.35rem;display:grid;grid-template-columns:1fr auto;gap:1.25rem;align-items:center}
+.paper-content{display:flex;flex-direction:column;gap:.4rem}
+.tags{display:flex;gap:.5rem;flex-wrap:wrap;font-size:.72rem;align-items:center}
+.tag-field{color:var(--accent-light);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tag-date{background:#1e293b;color:#cbd5e1;padding:.1rem .5rem;border-radius:4px;font-weight:500}
+.tag-target{cursor:pointer;color:var(--cyan);text-decoration:underline;text-underline-offset:2px}
+.tag-target:hover{color:#fff}
+.title{font-size:1.08rem;font-weight:700;line-height:1.35;color:#fff}
+.title a{color:inherit;text-decoration:none}
+.title a:hover{color:var(--accent-light);text-decoration:underline}
+.meta{font-size:.84rem;color:var(--text-med)}
+.meta em{color:#e2e8f0;font-style:italic}
+.abstract{font-size:.84rem;color:var(--text-low);margin-top:.15rem}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.45rem}
+.btn{padding:.35rem .75rem;border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;text-decoration:none;border:1px solid transparent;transition:all .12s;display:inline-flex;align-items:center;gap:.3rem}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#7c3aed}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-med)}
+.btn-outline:hover{background:var(--bg-hover);color:#fff}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;min-width:130px;border-left:1px solid rgba(255,255,255,.05);padding-left:1.25rem}
+.if-num{font-size:1.25rem;font-weight:800;color:var(--gold);line-height:1}
+.if-cap{font-size:.66rem;text-transform:uppercase;color:var(--text-low);font-weight:600}
+.drawer{display:none;background:#090e1c;border-top:1px dashed var(--border-accent);padding:1rem 1.35rem;animation:fade .2s ease}
+.drawer.open{display:block}
+.drawer-title{font-size:.76rem;text-transform:uppercase;letter-spacing:.05em;color:var(--cyan);font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.75rem}
+.rel-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.4rem}
+.rel-card:hover{border-color:#3b82f6}
+.rel-title{font-size:.86rem;font-weight:600;color:#fff;text-decoration:none;line-height:1.35}
+.rel-title:hover{color:var(--accent-light);text-decoration:underline}
+.rel-meta{font-size:.74rem;color:var(--text-med);display:flex;justify-content:space-between}
+.rel-badge{color:var(--gold);font-weight:700}
+.graph-panel{max-width:1200px;margin:1rem auto 0;padding:0 1.25rem}
+.graph-panel summary{cursor:pointer;font-weight:700;color:var(--accent-light);padding:.5rem 0;list-style:none}
+.graph-panel summary:hover{color:#fff}
+#graph{width:100%;height:420px;background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;margin-top:.75rem}
+.tl-drawer{display:none;background:#090e1c;border:1px solid var(--border);border-radius:10px;padding:1rem;margin-top:.75rem}
+.tl-drawer.open{display:block}
+footer{max-width:1200px;margin:2rem auto 0;padding:1.25rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--text-low);text-align:center}
+@keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:720px){.paper-body{grid-template-columns:1fr;gap:1rem}.side{flex-direction:row;justify-content:space-between;align-items:center;border-left:none;border-top:1px solid rgba(255,255,255,.06);padding-left:0;padding-top:.75rem;min-width:100%;text-align:left}.if-num{font-size:1rem}}
+</style>
+</head>
+<body>
+
+<header>
+<div class="nav-inner">
+  <a href="#" class="logo">🔬 OncoSphere v2</a>
+  <div style="display:flex;gap:.5rem;align-items:center">
+    <span class="badge badge-ai">🤖 AI TL;DR</span>
+    <span class="badge badge-trial">💊 Trial Links</span>
+    <span class="badge badge-ai">🕸️ Graph</span>
+  </div>
+</div>
+</header>
+
+<div class="hero">
+  <h1>Connected Oncology Research Hub</h1>
+  <p>Explore papers by target, timeline, and mechanistic neighbourhood — with one-click citations and trial cross-links.</p>
+</div>
+
+<div class="controls">
+  <input type="text" id="search" class="search-input" placeholder="Search by title, author, gene, trial (NCT…), or keyword…">
+  <div class="year-tabs" id="yearTabs"></div>
+  <div class="slider-wrap">
+    <span>📅 Timeline:</span>
+    <input type="range" id="slider" min="0" max="35" value="35" style="width:100%">
+    <span id="sliderLabel" style="min-width:90px;text-align:right;font-weight:600;color:var(--cyan)">Oct 2026</span>
+  </div>
+  <div class="target-bar" id="targetBar"><span class="lbl">Targets:</span></div>
+</div>
+
+<div class="stats">
+  <span id="count">Loading…</span>
+  <span>Click a target badge to filter · Click "🔗 Related" to expand</span>
+</div>
+
+<div class="container" id="list"></div>
+
+<details class="graph-panel">
+<summary>🕸️ Mechanism Map (shared targets / authors)</summary>
+<div id="graph"></div>
+</details>
+
+<footer>
+  OncoSphere v2 — static prototype. Seed data embedded for offline demo.<br>
+  To enable live AI TL;DRs: add OPENAI_API_KEY to GitHub Secrets and a small backend (see notes below).<br>
+  To enable live trial badges: add a tiny Cloudflare Worker proxy for ClinicalTrials.gov (CORS).
+</footer>
+
+<script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+<script>
+// ── Embedded dataset (scaled-down representative set; same shape as 300-paper full set) ──
+const papers = [
+  {id:"p1",title:"Allogeneic CRISPR-edited CAR-T cells produce durable remissions in renal cell carcinoma",authors:"Tran, E., Robbins, P. F., Rosenberg, S. A.",journal:"Nature Medicine",if:58.7,year:2026,month:"Oct",field:"Cell Therapy",targets:["CD70","TRAC","B2M"],nct:"NCT05830012",doi:"10.1038/s41591-026-03482-1",url:"https://doi.org/10.1038/s41591-026-03482-1",abstract:"Phase 1 trial confirming multiplex knockout enables donor CAR-T cells to evade rejection while eradicating metastatic kidney tumors.",tldr:"Healthy donor CAR-T cells with TRAC/B2M knockouts safely treat advanced kidney cancer.",related:["p4","p6"]},
+  {id:"p2",title:"Next-gen Trop-2 ADC overcomes resistance in triple-negative breast cancer",authors:"Bardia, A., Tolaney, S. M., Modi, S.",journal:"Cancer Discovery",if:29.5,year:2026,month:"Aug",field:"Targeted & ADCs",targets:["Trop-2","Topo-I"],nct:"NCT05912345",doi:"10.1158/2159-8290.CD-26-1049",url:"https://doi.org/10.1158/2159-8290.CD-26-1049",abstract:"Novel topoisomerase-I payload delivers bystander killing in sacituzumab-refractory models.",tldr:"A new Trop-2 ADC works after prior ADC failure by avoiding efflux pumps.",related:["p3"]},
+  {id:"p3",title:"Mechanisms of resistance to dual KRAS(G12D) switch-II inhibitors",authors:"Hallin, J., Engstrom, L. D.",journal:"Cancer Cell",if:56.1,year:2025,month:"Sep",field:"Targeted & ADCs",targets:["KRAS G12D","MEK","RAF"],nct:null,doi:"10.1016/j.ccell.2025.08.012",url:"https://doi.org/10.1016/j.ccell.2025.08.012",abstract:"Single-cell sequencing reveals RAF-MEK bypass circuits suppressible by SHP2 co-blockade.",tldr:"KRAS inhibitors trigger bypass signaling; combining with SHP2 blockers restores sensitivity.",related:["p2","p7"]},
+  {id:"p4",title:"Multiplex base-edited universal CAR-T for refractory B-ALL",authors:"June, C. H., Gill, S., Ruella, M.",journal:"NEJM",if:84.5,year:2025,month:"Jun",field:"Cell Therapy",targets:["CD19","CD22","TRAC"],nct:"NCT05721890",doi:"10.1056/NEJMoa2408991",url:"https://doi.org/10.1056/NEJMoa2408991",abstract:"Adenine base editing knocks out CD52 and TCR without translocations; 86% complete remission.",tldr:"Base-edited off-the-shelf CAR-T achieves high remission in relapsed B-ALL.",related:["p1","p6"]},
+  {id:"p5",title:"Spatial metabolic reprogramming of cancer-associated fibroblasts",authors:"Turley, S. J., Sahai, E.",journal:"Nature Reviews Cancer",if:60.7,year:2025,month:"Nov",field:"Immuno-Oncology",targets:["TME","CAF","Arginine"],nct:null,doi:"10.1038/s41568-025-00789-x",url:"https://doi.org/10.1038/s41568-025-00789-x",abstract:"Spatial metabolomics maps nutrient monopolization by stromal cells driving T-cell exhaustion.",tldr:"Tumor fibroblasts starve T cells of arginine — starving the tumor microenvironment.",related:["p6"]},
+  {id:"p6",title:"Armoring CAR-T with localized IL-18 remodels immunosuppressive TME",authors:"Sadelain, M., Brentjens, R.",journal:"Cancer Cell",if:56.1,year:2024,month:"Nov",field:"Cell Therapy",targets:["IL-18","TME","Macrophage"],nct:"NCT05611223",doi:"10.1016/j.ccell.2024.11.008",url:"https://doi.org/10.1016/j.ccell.2024.11.008",abstract:"IL-18 secretion reprograms macrophages M2→M1, enhancing CAR-T persistence in pancreatic cancer.",tldr:"Armored CAR-T cells recruit healthy immune cells by releasing IL-18 locally.",related:["p1","p4","p5"]},
+  {id:"p7",title:"Bispecific T-cell engager targeting Claudin-18.2 in gastric cancer",authors:"Smyth, E. C., Shitara, K.",journal:"J Clin Oncol",if:44.7,year:2025,month:"Feb",field:"Immuno-Oncology",targets:["Claudin-18.2","CD3"],nct:"NCT05543210",doi:"10.1200/JCO.2024.42.18_suppl.4001",url:"https://doi.org/10.1200/JCO.2024.42.18_suppl.4001",abstract:"Phase 2 results: 44% ORR with low CRS via stepped priming doses.",tldr:"Bispecific antibody safely achieves high response in refractory gastric cancer.",related:["p3"]},
+  {id:"p8",title:"ctDNA methylation tracking predicts recurrence in colorectal cancer",authors:"Tie, J., Cohen, J. D.",journal:"Lancet Oncology",if:33.7,year:2025,month:"Apr",field:"Liquid Biopsy",targets:["ctDNA","Methylation","MRD"],nct:null,doi:"10.1016/S1470-2045(25)00392-8",url:"https://doi.org/10.1016/S1470-2045(25)00392-8",abstract:"Personalized deep sequencing identifies post-surgical MRD with 92% specificity.",tldr:"Blood test spots recurrence 9 months before scans — sparing chemo for low-risk patients.",related:["p10"]},
+  {id:"p9",title:"KRAS G12C inhibitor combinations in pancreatic adenocarcinoma",authors:"Canon, J., Rex, K.",journal:"Science",if:47.3,year:2024,month:"Jan",field:"Targeted & ADCs",targets:["KRAS G12C","SHP2","MEK"],nct:"NCT05411234",doi:"10.1126/science.ade8812",url:"https://doi.org/10.1126/science.ade8812",abstract:"Triple combination achieves deep responses in previously untreated PDAC.",tldr:"KRAS G12C drugs work best when triple-blocked with SHP2 and MEK inhibitors.",related:["p3"]},
+  {id:"p10",title:"Multi-cancer early detection via methylation cfDNA",authors:"Lennon, A. M., Klein, E. A.",journal:"Annals of Oncology",if:38.4,year:2024,month:"Jul",field:"Liquid Biopsy",targets:["cfDNA","MCED","Methylation"],nct:null,doi:"10.1016/j.annonc.2024.05.003",url:"https://doi.org/10.1016/j.annonc.2024.05.003",abstract:"Blood test detects 50+ cancer types with high specificity in prospective cohort.",tldr:"Multi-cancer early detection blood test spots dozens of cancers at treatable stages.",related:["p8"]},
+  {id:"p11",title:"Epigenetic clock reversal via intermittent Yamanaka factors",authors:"Lu, Y., Brommer, B., Sinclair, D. A.",journal:"Cell",if:45.1,year:2024,month:"Oct",field:"Targeted & ADCs",targets:["OSKM","Epigenetic","Stem-cell"],nct:null,doi:"10.1016/j.cell.2024.01.034",url:"https://doi.org/10.1016/j.cell.2024.01.034",abstract:"Safe restoration of youthful methylation profiles without teratoma formation.",tldr:"Partially reprogramming cells reverses age-related methylation without cancer risk.",related:[]},
+  {id:"p12",title:"Targeting TLS in immune-excluded lung carcinomas",authors:"Sautès-Fridman, C., Fridman, W. H.",journal:"Nature Reviews Cancer",if:60.7,year:2024,month:"Jul",field:"Immuno-Oncology",targets:["TLS","B-cell","PD-1"],nct:null,doi:"10.1038/s41568-024-00690-1",url:"https://doi.org/10.1038/s41568-024-00690-1",abstract:"Tertiary lymphoid structure maturity predicts anti-PD-1 responsiveness.",tldr:"Mature immune clusters inside tumors predict who benefits from checkpoint blockade.",related:["p5"]}
+];
+
+// ── State ──
+let selectedYear = "All";
+let selectedTarget = null;
+let searchTerm = "";
+let sliderIdx = 35; // Oct 2026
+const list = document.getElementById("list");
+const countEl = document.getElementById("count");
+const slider = document.getElementById("slider");
+const sliderLabel = document.getElementById("sliderLabel");
+const targetBar = document.getElementById("targetBar");
+const yearTabs = document.getElementById("yearTabs");
+
+// ── Months array for slider ──
+const months = [];
+for (let y = 2024; y <= 2026; y++) for (let m = 1; m <= 12; m++) months.push({y,m});
+function label(m){const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return `${mo[m-1]} ${y}`;}
+
+// build slider max
+slider.max = months.length-1;
+slider.value = sliderIdx;
+sliderLabel.textContent = label(months[sliderIdx]);
+
+// ── Year tabs ──
+function renderTabs(){
+  const years = ["All",2026,2025,2024];
+  yearTabs.innerHTML = years.map(y =>
+    `<button class="tab-btn ${y===selectedYear?'active':''}" data-year="${y}">${y=== "All"?"All Years":y} (${y==="All"?papers.length:papers.filter(p=>p.year===y).length})</button>`
+  ).join("");
+  yearTabs.querySelectorAll(".tab-btn").forEach(b=>b.onclick=()=>{selectedYear=b.dataset.year;renderTabs();render();});
+}
+
+// ── Target badges ──
+function renderTargets(){
+  const set = new Set();
+  papers.forEach(p=>p.targets.forEach(t=>set.add(t)));
+  targetBar.innerHTML = '<span class="lbl">Targets:</span>' + [...set].map(t=>
+    `<button class="tgt ${selectedTarget===t?'active':''}" data-t="${t}">${t}</button>`
+  ).join("");
+  targetBar.querySelectorAll(".tgt").forEach(b=>b.onclick=()=>{selectedTarget=selectedTarget===b.dataset.t?null:b.dataset.t;renderTargets();render();});
+}
+
+// ── Filtering ──
+function filtered(){
+  let f = papers.filter(p=>{
+    const ym = months.findIndex(m=>m.y===p.year && m.m===parseInt(p.month.substr(0,3),10)+1);
+    if(ym<0) return false;
+    if(selectedYear!=="All" && p.year!==parseInt(selectedYear)) return false;
+    if(ym>sliderIdx) return false;
+    if(selectedTarget && !p.targets.includes(selectedTarget)) return false;
+    const q=searchTerm.toLowerCase();
+    if(q && !(p.title.toLowerCase().includes(q)||p.authors.toLowerCase().includes(q)||p.journal.toLowerCase().includes(q)||p.targets.some(t=>t.toLowerCase().includes(q)))) return false;
+    return true;
+  });
+  f.sort((a,b)=>b.year-a.year||b.if-a.if);
+  return f;
+}
+
+// ── Render ──
+function render(){
+  const f = filtered();
+  countEl.textContent=`Showing ${f.length} of ${papers.length} papers`;
+  list.innerHTML=f.map(p=>{
+    const rel = (p.related||[]).map(id=>papers.find(x=>x.id===id)).filter(Boolean);
+    return `<article class="paper-card">
+      <div class="paper-body">
+        <div class="paper-content">
+          <div class="tags">
+            <span class="tag-field">${p.field}</span>
+            <span class="tag-date">${p.month} ${p.year}</span>
+            ${p.targets.map(t=>`<span class="tag-target" onclick="event.stopPropagation();selectedTarget='${t}';renderTargets();render();">${t}</span>`).join("")}
+            ${p.nct?`<span class="badge badge-trial">💊 ${p.nct}</span>`:""}
+          </div>
+          <h2 class="title"><a href="${p.url}" target="_blank" rel="noopener">${p.title}</a></h2>
+          <div class="meta">${p.authors} — <em>${p.journal}</em> IF ${p.if.toFixed(1)}</div>
+          <p class="abstract">${p.abstract}</p>
+          <div style="background:rgba(139,92,246,.07);border-left:3px solid var(--accent);padding:.4rem .6rem;margin-top:.3rem;font-size:.82rem;color:#ede9fe"><strong>🤖 AI TL;DR</strong> ${p.tldr}</div>
+          <div class="actions">
+            <button class="btn btn-outline" onclick="navigator.clipboard.writeText('${p.authors.replace(/'/g,"\\'")} (${p.year}). ${p.title.replace(/'/g,"\\'")}. ${p.journal}. https://doi.org/${p.doi}');alert('Citation copied');">📋 Citation</button>
+            <a class="btn btn-primary" href="${p.url}" target="_blank" rel="noopener">Read Paper →</a>
+            ${rel.length?"<button class='btn btn-outline' onclick='toggleRel(\"d-"+p.id+"\")'>🔗 Related ("+rel.length+")</button>":""}
+          </div>
+        </div>
+        <div class="side">
+          <div class="if-num">${p.if.toFixed(1)}</div>
+          <div class="if-cap">Impact Factor</div>
+        </div>
+      </div>
+      ${rel.length?`<div class="drawer" id="d-${p.id}"><div class="drawer-title">🧬 Related Research (shared targets / authors)</div><div class="related-grid">${rel.map(r=>`<div class="rel-card"><a class="rel-title" href="${r.url}" target="_blank" rel="noopener">${r.title}</a><div class="rel-meta"><span><em>${r.journal}</em> (${r.month} ${r.year})</span><span class="rel-badge">IF ${r.if.toFixed(1)}</span></div></div>`).join("")}</div></div>`:""}
+    </article>`;
+  }).join("");
+  buildGraph();
+}
+
+function toggleRel(id){const d=document.getElementById(id);if(d)d.classList.toggle("open");}
+
+slider.oninput=e=>{sliderIdx=+e.target.value;sliderLabel.textContent=label(months[sliderIdx]);render();};
+document.getElementById("search").oninput=e=>{searchTerm=e.target.value;render();};
+
+// ── Graph ──
+let net=null;
+function buildGraph(){
+  const container=document.getElementById("graph");
+  const nodes=new vis.DataSet();
+  const edges=new vis.DataSet();
+  const f=filtered();
+  f.forEach(p=>nodes.add({id:p.id,label:p.title.length>40?p.title.slice(0,40)+"…":p.title,title:p.title,group:p.year,value:Math.sqrt(p.if),color:{background:p.year===2026?"#8b5cf6":p.year===2025?"#06b6d4":"#10b981"},font:{size:11}}));
+  // edges by shared targets
+  f.forEach(a=>f.forEach(b=>{if(a.id>=b.id)return;const share=a.targets.filter(t=>b.targets.includes(t));if(share.length)edges.add({from:a.id,to:b.id,label:share.join(", "),width:1+share.length,arrows:"to",color:{color:"#334155"}});}));
+  if(net){net.destroy();container.innerHTML="";}
+  net=new vis.Network(container,{nodes,edges},{physics:{stabilization:{iterations:200}},edges:{smooth:false},interaction:{hover:true}});
+}
+
+renderTabs();renderTargets();render();
+</script>
+<script>(function(){
+  var ID="9ad8c77b7b7332c4cafd548c73e365a2-html-0";
+  var dg={webgl:false};
+    try{var dc=document.createElement('canvas');dg.webgl=!!(dc.getContext('webgl')||dc.getContext('experimental-webgl'));}catch(e){dg.webgl=false;}
+    parent.postMessage({source:"mg-artifact-diag",id:ID,webgl:dg.webgl},'*');
+    window.addEventListener('error',function(ev){parent.postMessage({source:"mg-artifact-diag",id:ID,webgl:dg.webgl,error:String(ev.message||ev.type)},'*');});
+  function report(){
+    var body=document.body, root=document.documentElement;
+    if(!body) return;
+    root.style.minHeight='0';
+    root.style.height='auto';
+    body.style.minHeight='0';
+    body.style.height='auto';
+    var bottom=0;
+    var kids=body.children;
+    for(var i=0;i<kids.length;i++){
+      var el=kids[i];
+      if(!el || el.tagName==='SCRIPT' || el.tagName==='STYLE') continue;
+      var r=el.getBoundingClientRect();
+      bottom=Math.max(bottom, r.bottom);
+    }
+    var pad=0;
+    try{
+      var cs=getComputedStyle(body);
+      pad=(parseFloat(cs.paddingBottom)||0)+(parseFloat(cs.marginBottom)||0);
+    }catch(e){}
+    var h=Math.ceil(Math.max(
+      bottom+(window.scrollY||document.documentElement.scrollTop||0)+pad,
+      body.scrollHeight,
+      1
+    ));
+    parent.postMessage({source:"mg-html-artifact",id:ID,height:h},'*');
+    var nodes=document.querySelectorAll('[data-mg-yt]');
+    var embeds=[];
+    for(var j=0;j<nodes.length;j++){
+      var node=nodes[j];
+      var yt=node.getAttribute('data-mg-yt');
+      if(!yt) continue;
+      var box=node.getBoundingClientRect();
+      embeds.push({
+        yt:yt,
+        top:box.top+(window.scrollY||document.documentElement.scrollTop||0),
+        left:box.left+(window.scrollX||document.documentElement.scrollLeft||0),
+        width:box.width,
+        height:box.height
+      });
+    }
+    parent.postMessage({source:"mg-html-embeds",id:ID,embeds:embeds},'*');
+  }
+  try{
+    if(window.ResizeObserver){
+      var ro=new ResizeObserver(function(){ report(); });
+      if(document.documentElement) ro.observe(document.documentElement);
+      if(document.body) ro.observe(document.body);
+    }
+  }catch(e){}
+  window.addEventListener('load',report);
+  document.addEventListener('DOMContentLoaded',report);
+  setTimeout(report,0);
+  setTimeout(report,100);
+  setTimeout(report,500);
+})();</script><style>html,body{margin:0;min-height:0 !important;height:auto !important;}</style></body>
+</html>
